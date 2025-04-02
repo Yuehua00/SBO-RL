@@ -50,7 +50,7 @@ class GA:
 
                     # 長度足夠
                     if len_p2 >= len_p1:
-                        offspring = parent2
+                        offspring = parent2[:len_p1]
                     # 長度不夠
                     else :
                         offspring = torch.cat([parent2, parent1[len_p2:]], dim=0)
