@@ -35,7 +35,7 @@ class LearningCurve:
     def test_initial_performance(self):
 
         self.learning_curve_steps.append(0)
-        self.learning_curve_scores.append(self.test_performance(self.mu_actor))
+        self.learning_curve_scores.append(self.test_performance(self.env_name, self.mu_actor))
 
 
     def add_step(self):
@@ -47,7 +47,7 @@ class LearningCurve:
             self.learning_curve_steps.append(self.steps)
 
             if self.steps > args.start_steps:
-                self.learning_curve_scores.append(self.test_performance(self.mu_actor))
+                self.learning_curve_scores.append(self.test_performance(self.env_name, self.mu_actor))
             else:
                 self.learning_curve_scores.append(self.learning_curve_scores[-1])
 
