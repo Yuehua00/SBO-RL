@@ -7,7 +7,7 @@ from config import args
 
 class Actor(nn.Module):
 	def __init__(self, state_dim, action_dim, max_action):
-		super(nn.Module, self).__init__()
+		super(Actor, self).__init__()
 
 		self.l1 = nn.Linear(state_dim, 400)
 		self.l2 = nn.Linear(400, 300)
