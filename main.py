@@ -208,7 +208,6 @@ if (__name__ == "__main__"):
                 # 從哪裡轉換
                 tasks[task_i].transfer_from = task_j
                 # 轉換(要轉換的、要轉換過去的、轉換數量)
-                print("有transfer")
                 ga.transfer(tasks[task_i].actor, tasks[task_j].actor, s)
                 # tasks[task_i].actor[lambda_i-s :] = tasks[task_j].actor[ : s]
 
