@@ -100,7 +100,12 @@ if (__name__ == "__main__"):
             offspring = tasks[task_i].cem.variate(tasks[task_i].actor, args.population_size)
 
             # 更新 learning curve 裡的 mu actor
+            prev_mu = deepcopy(tasks[task_i].mu_actor)
             tasks[task_i].mu_actor = gene_to_phene(tasks[task_i].mu_actor, tasks[task_i].cem.actor_mu[0])  # tasks[task_i].mu_actor[0] 是甚麼
+            if np.allclose(prev_mu.param, tasks[task_i].mu_actor.param):
+                print("mu_actor 沒有變化！")
+            else:
+                print("mu_actor 有成功更新")
             learning_curves[task_i].update(tasks[task_i].mu_actor)
 
             ###### 評估所有 offspring 的 actor ######
