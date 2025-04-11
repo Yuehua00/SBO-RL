@@ -100,7 +100,7 @@ if (__name__ == "__main__"):
             offspring = tasks[task_i].cem.variate(tasks[task_i].actor, args.population_size)
 
             # 更新 learning curve 裡的 mu actor
-            tasks[task_i].mu_actor = gene_to_phene(tasks[task_i].mu_actor, tasks[task_i].mu_actor[0])  # tasks[task_i].mu_actor[0] 是甚麼
+            tasks[task_i].mu_actor = gene_to_phene(tasks[task_i].mu_actor, tasks[task_i].cem.actor_mu[0])  # tasks[task_i].mu_actor[0] 是甚麼
             learning_curves[task_i].update(tasks[task_i].mu_actor)
 
             ###### 評估所有 offspring 的 actor ######
@@ -156,7 +156,7 @@ if (__name__ == "__main__"):
 
                 actor = tasks[task_i].actor[i]
                 actor_optimizer = torch.optim.Adam(actor.parameters(), lr=args.actor_learning_rate)
-                actor_target = deepcopy(actor).requires_grad(False)
+                actor_target = deepcopy(actor).requires_grad_(False)
                 
                 critic = tasks[task_i].critic
                 critic_optimizer = tasks[task_i].critic_optimizer
@@ -208,6 +208,7 @@ if (__name__ == "__main__"):
                 # 從哪裡轉換
                 tasks[task_i].transfer_from = task_j
                 # 轉換(要轉換的、要轉換過去的、轉換數量)
+                print("有transfer")
                 ga.transfer(tasks[task_i].actor, tasks[task_j].actor, s)
                 # tasks[task_i].actor[lambda_i-s :] = tasks[task_j].actor[ : s]
 

@@ -13,6 +13,9 @@ def train_critic(critic: Critic, critic_optimizer: torch.optim, critic_target: C
     states, actions, next_states, rewards, not_dones = replay_buffer.sample(args.batch_size)
     with torch.no_grad():
         noise = (torch.randn_like(actions) * args.policy_noise).clamp(-args.policy_noise_clip, args.policy_noise_clip)
+        print(f"noise: {noise.shape}")
+        print(f"NS: {next_states.shape}")
+        print(f"A: {actor_target(next_states).shape}")
         next_actions = (actor_target(next_states) + noise).clamp(-actor_target.max_action, actor_target.max_action)
 
         target_q1, target_q2 = critic_target(next_states, next_actions)
