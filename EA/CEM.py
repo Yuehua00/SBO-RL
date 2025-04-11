@@ -85,6 +85,7 @@ class CEM:
 
             new_genes = self.actor_mu + epsilon * cov.sqrt()  # shape = (population_size , params_size)
 
+            print("mu diff:", (self.actor_mu - old_mu).abs().mean().item())
 
             for i in range(offspring_size):
 

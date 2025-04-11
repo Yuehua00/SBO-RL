@@ -100,16 +100,7 @@ if (__name__ == "__main__"):
             offspring = tasks[task_i].cem.variate(tasks[task_i].actor, args.population_size)
 
             # 更新 learning curve 裡的 mu actor
-            prev_mu = deepcopy(tasks[task_i].mu_actor)
             tasks[task_i].mu_actor = gene_to_phene(tasks[task_i].mu_actor, tasks[task_i].cem.actor_mu[0])  # tasks[task_i].mu_actor[0] 是甚麼
-            
-            if not np.allclose(
-                torch.cat([p.flatten() for p in prev_mu.parameters()]),
-                torch.cat([p.flatten() for p in tasks[task_i].mu_actor.parameters()])
-            ):
-                print("mu_actor 有成功更新")
-            else:
-                print("mu_actor 沒有變化！")
             learning_curves[task_i].update(tasks[task_i].mu_actor)
 
             ###### 評估所有 offspring 的 actor ######
