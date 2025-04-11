@@ -198,7 +198,7 @@ if (__name__ == "__main__"):
                     r = r_j
                     task_j = j
                 rate_transfer[task_i][j] = r_j
-            if r >= np.random.uniform(0, 1, 1):
+            if r >= np.random.uniform(0, 1):
                 lambda_i = len(tasks[task_i].actor)
                 s = r * lambda_i  # s = r * args.population_size
                 if s < 1:
@@ -246,7 +246,7 @@ if (__name__ == "__main__"):
             for index in range(actor_size): 
                 ranking = indv_ranking[task_i][index] # 在 offspring 中的排名
                 task_j = tasks[task_i].transfer_from # 從喇裡轉換來的
-                transfer_pos = int(actor_size - float(adapt_transfer_size[task_i][task_j]))  # 哪一個 index 開始被轉換
+                transfer_pos = int(actor_size - adapt_transfer_size[task_i][task_j])  # 哪一個 index 開始被轉換
                 if index < help_pos:
                     if index >= transfer_pos:  # 是被交換來的
                         if ranking < help_pos:
