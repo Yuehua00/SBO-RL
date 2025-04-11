@@ -57,7 +57,7 @@ if (__name__ == "__main__"):
 
     ###### 初始化 learning curve ######
     learning_curves=[
-        LearningCurve(args.env_name[task_i], task_i.mu_actor) for task_i in range(len(tasks))
+        LearningCurve(args.env_names[task_i], task_i.mu_actor) for task_i in range(len(tasks))
     ]
 
     # 紀錄最初始的分數
@@ -285,7 +285,7 @@ if (__name__ == "__main__"):
     ###### 儲存結果 ######
     if args.save_result == True:
         for i in range(len(tasks)):
-            learning_curves[i].save(os.path.join(args.output_folder, f"[{args.env_name[i]}]Learning Curve.json"))
+            learning_curves[i].save(os.path.join(args.output_folder, f"[{args.env_names[i]}]Learning Curve.json"))
 
     end_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
