@@ -238,7 +238,7 @@ if (__name__ == "__main__"):
             print("=============================================")
 
             actor_size = len(tasks[task_i].actor)
-            transfer_pos = int(actor_size - adapt_transfer_size[task_i])  # 哪一個 index 開始被轉換
+            # transfer_pos = int(actor_size - adapt_transfer_size[task_i])  # 哪一個 index 開始被轉換
             help_pos = int(ratio_help_neutral_harm[0] * actor_size)
             neutral_pos = int(ratio_help_neutral_harm[1] * actor_size)
             harm_pos = int(ratio_help_neutral_harm[2] * actor_size)
@@ -246,6 +246,7 @@ if (__name__ == "__main__"):
             for index in range(actor_size): 
                 ranking = indv_ranking[task_i][index] # 在 offspring 中的排名
                 task_j = tasks[task_i].transfer_from # 從喇裡轉換來的
+                transfer_pos = int(actor_size - adapt_transfer_size[task_i][task_j])  # 哪一個 index 開始被轉換
                 if index < help_pos:
                     if index >= transfer_pos:  # 是被交換來的
                         if ranking < help_pos:
