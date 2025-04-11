@@ -13,7 +13,7 @@ class Actor(nn.Module):
 		self.l2 = nn.Linear(400, 300)
 		self.l3 = nn.Linear(300, action_dim)
 		
-		self.max_action = torch.from_numpy(max_action).to(torch.float32).detach().to(args.device)
+		self.max_action = max_action
 		
 		self.fitness = None
 
