@@ -148,6 +148,7 @@ if (__name__ == "__main__"):
 
             # 重新選取 actor population
             tasks[task_i].actor = tasks[task_i].cem.variate(tasks[task_i].actor, args.population_size)
+            print("[Main] Called variate() and updated actor population.")
                 
             # train
             print(f"Task [{args.env_names[task_i]}] train:")

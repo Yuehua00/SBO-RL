@@ -56,6 +56,7 @@ class CEM:
         return actor_population
 
     def variate(self, actor_population: list[Actor], offspring_size: int) -> list[Actor]:
+        print("actor_mu.shape =", self.actor_mu.shape)
 
         with torch.no_grad():
 
