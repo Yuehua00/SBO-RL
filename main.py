@@ -221,6 +221,9 @@ if (__name__ == "__main__"):
                 fitness, evaluate_steps = tasks[task_i].evaluate(1, actor, replay_buffers[task_i], learning_curves[task_i])
                 actor.fitness = fitness
                 tasks[task_i].evaluate_steps += evaluate_steps
+            
+            if learning_curves[task_i].steps % args.test_performance_freq == 0:
+                print(f"steps={learning_curves[task_i].learning_curve_steps[-1]}  score={learning_curves[task_i].learning_curve_scores[-1]:.3f}")
 
             # 排序(轉換過來的和原本的，由大到小) 
             # indv_ranking[task_i] = np.argsort(-tasks[task_i].actor)
@@ -250,7 +253,7 @@ if (__name__ == "__main__"):
                 # 沒有轉換
                 if task_j is None:
                     continue
-                
+
                 transfer_pos = int(actor_size - adapt_transfer_size[task_i][task_j])  # 哪一個 index 開始被轉換
                 if index < help_pos:
                     if index >= transfer_pos:  # 是被交換來的
@@ -282,9 +285,6 @@ if (__name__ == "__main__"):
                             competition[task_i][task_j] += 1
                     else:
                         competition[task_i][task_i] += 1
-
-            if learning_curves[task_i].steps % args.test_performance_freq == 0:
-                print(f"steps={learning_curves[task_i].learning_curve_steps[-1]}  score={learning_curves[task_i].learning_curve_scores[-1]:.3f}")
 
 
 
