@@ -151,7 +151,8 @@ if (__name__ == "__main__"):
                 
             # train
             print(f"Task [{args.env_names[task_i]}] train:")
-            for i in range(len(tasks[task_i].actor)//2):
+            half_size = len(tasks[task_i].actor)//2
+            for i in range(half_size):
 
                 actor = tasks[task_i].actor[i]
                 actor_optimizer = torch.optim.Adam(actor.parameters(), lr=args.actor_learning_rate)
@@ -163,8 +164,11 @@ if (__name__ == "__main__"):
 
                 replay_buffer = replay_buffers[i]
 
-                train_critic(critic, critic_optimizer, critic_target, actor_target, replay_buffer)
-                train_actor(actor, actor_optimizer, critic, replay_buffer)
+                for _ in range(tasks[task_i].evaluate_steps // half_size):
+                    train_critic(critic, critic_optimizer, critic_target, actor_target, replay_buffer)
+                
+                for _ in range(tasks[task_i].evaluate_steps):
+                    train_actor(actor, actor_optimizer, critic, replay_buffer)
 
         indv_ranking: list[list] = [[]]
         for task_i in range(len(tasks)):
@@ -180,10 +184,9 @@ if (__name__ == "__main__"):
             task_j = 0
             for j in range(len(tasks)):
                 
-                # ?
-                # if task_i == j:
-                #     rate_transfer[i][j] = 0
-                #     continue
+                if task_i == j:
+                    rate_transfer[i][j] = 0
+                    continue
 
                 # 計算 transfer rata
                 positive = mutualism[task_i][j] + commensalism[task_i][j] + parasitism[task_i][j]
