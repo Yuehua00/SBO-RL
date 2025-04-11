@@ -194,10 +194,10 @@ if (__name__ == "__main__"):
                 r_j = positive / (positive + negative + 1e-15)
                 if r_j > 0.5:  # 兩段 code 當中都有，但 psuedo code 沒提到
                     r_j = 0.5
-                if rate_transfer[i][j] < r_j:
+                if rate_transfer[task_i][j] < r_j:
                     r = r_j
                     task_j = j
-                rate_transfer[i][j] = r_j
+                rate_transfer[task_i][j] = r_j
             if r >= np.random.uniform(0, 1, 1):
                 lambda_i = len(tasks[task_i].actor)
                 s = r * lambda_i  # s = r * args.population_size
