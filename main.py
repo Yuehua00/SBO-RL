@@ -142,6 +142,7 @@ if (__name__ == "__main__"):
                 print(f"Task [{args.env_names[task_i]}] is frozen.")
                 continue
             
+            print("Hi")
             print("=============================================")
             print(f"Task [{args.env_names[task_i]}] is doing policy gradient...")
             print("=============================================")
