@@ -219,6 +219,7 @@ if (__name__ == "__main__"):
 
             for actor in tasks[task_i].actor:
                 fitness, evaluate_steps = tasks[task_i].evaluate(1, actor, replay_buffers[task_i], learning_curves[task_i])
+                print(f"Actor fitness = {fitness}")
                 actor.fitness = fitness
                 tasks[task_i].evaluate_steps += evaluate_steps
             

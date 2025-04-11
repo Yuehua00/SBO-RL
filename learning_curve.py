@@ -51,6 +51,7 @@ class LearningCurve:
 
             if self.steps > args.start_steps:
                 self.learning_curve_scores.append(self.test_performance(self.env_name, self.mu_actor))
+                print(f"[test_performance] score = {score}")
             else:
                 self.learning_curve_scores.append(self.learning_curve_scores[-1])
 
