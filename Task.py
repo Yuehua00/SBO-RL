@@ -29,7 +29,7 @@ class Task:
         self.actor = []
         # critic
         self.critic = Critic(self.state_dim, self.action_dim).to(args.device)
-        self.critic_target = deepcopy(self.critic).requires_grad(False)
+        self.critic_target = deepcopy(self.critic).requires_grad_(False)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=args.critic_learning_rate)
 
         # 從哪裡轉換來
