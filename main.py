@@ -52,7 +52,7 @@ if (__name__ == "__main__"):
     ga = GA()
 
     # 每個任務的初始 actor
-    for task_i in tasks:
+    for task_i in len(tasks):
         tasks[task_i].init_actor()
 
     ###### 初始化 learning curve ######
