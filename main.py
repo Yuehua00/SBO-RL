@@ -162,7 +162,7 @@ if (__name__ == "__main__"):
                 critic_optimizer = tasks[task_i].critic_optimizer
                 critic_target = tasks[task_i].critic_target
 
-                replay_buffer = replay_buffers[i]
+                replay_buffer = replay_buffers[task_i]
 
                 for _ in range(tasks[task_i].evaluate_steps // half_size):
                     train_critic(critic, critic_optimizer, critic_target, actor_target, replay_buffer)
@@ -185,7 +185,7 @@ if (__name__ == "__main__"):
             for j in range(len(tasks)):
                 
                 if task_i == j:
-                    rate_transfer[i][j] = 0
+                    rate_transfer[task_i][j] = 0
                     continue
 
                 # 計算 transfer rata
@@ -218,7 +218,7 @@ if (__name__ == "__main__"):
             print(f"Task [{args.env_names[task_i]}] evaluate:")
             print(f"Current steps: {tasks[task_i].steps}")
 
-            for actor in range(tasks[task_i].actor):
+            for actor in tasks[task_i].actor:
                 fitness, evaluate_steps = tasks[task_i].evaluate(1, actor, replay_buffers[task_i], learning_curves[task_i])
                 actor.fitness = fitness
                 tasks[task_i].evaluate_steps += evaluate_steps
