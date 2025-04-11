@@ -57,7 +57,7 @@ if (__name__ == "__main__"):
 
     ###### 初始化 learning curve ######
     learning_curves=[
-        LearningCurve(args.env_names[task_i], task_i.mu_actor) for task_i in range(len(tasks))
+        LearningCurve(args.env_names[task_i], args.env_names[task_i].mu_actor) for task_i in range(len(tasks))
     ]
 
     # 紀錄最初始的分數
