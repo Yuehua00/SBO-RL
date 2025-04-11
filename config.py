@@ -21,7 +21,7 @@ parser.add_argument("--max_steps", type = int, default = int(1e6), help = "實�
 
 
 # 性能測試設定
-parser.add_argument("--test_performance_freq", type = int, default = 5000, help = "每與環境互動多少 steps 要測試一次 actor 性能")
+parser.add_argument("--test_performance_freq", type = int, default = 1000, help = "每與環境互動多少 steps 要測試一次 actor 性能")
 parser.add_argument("--test_n", type = int, default = 20, help = "每次測試 actor 要玩幾局")
 
 

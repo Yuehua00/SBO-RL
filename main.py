@@ -26,7 +26,7 @@ if (__name__ == "__main__"):
     torch.manual_seed(args.seed)
 
     ###### 建立環境 ######
-    tasks = [Task(env_name) for env_name in args.env_name]
+    tasks = [Task(env_name) for env_name in args.env_names]
 
     # 初始化 replay buffer
     replay_buffers = [ReplayBuffer(task.state_dim, task.action_dim) for task in tasks]
