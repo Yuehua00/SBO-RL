@@ -47,7 +47,7 @@ if (__name__ == "__main__"):
     # 初始化轉移率
     rate_transfer = np.zeros((len(tasks), len(tasks)))
     # 初始化轉移數量
-    adapt_transfer_size = np.zeros(len(tasks), len(tasks))
+    adapt_transfer_size = np.zeros((len(tasks), len(tasks)))
 
     ga = GA()
 
