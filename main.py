@@ -170,7 +170,7 @@ if (__name__ == "__main__"):
                 for _ in range(tasks[task_i].evaluate_steps):
                     train_actor(actor, actor_optimizer, critic, replay_buffer)
 
-        indv_ranking: list[np.ndarray] = [None for _ in range(tasks)]
+        indv_ranking: list[np.ndarray] = [None for _ in range(len(tasks))]
         for task_i in range(len(tasks)):
 
             if (tasks[task_i].is_reach_steps_limit()):
