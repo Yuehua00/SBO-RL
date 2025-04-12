@@ -141,6 +141,10 @@ if (__name__ == "__main__"):
     while(not all_reach_max_steps):
         
         for task_i in range(len(tasks)):
+
+            if (tasks[task_i].is_reach_steps_limit()):
+                print(f"Task [{args.env_names[task_i]}] is frozen.")
+                continue
             
             print("=============================================")
             print(f"Task [{args.env_names[task_i]}] is doing policy gradient...")
@@ -180,9 +184,6 @@ if (__name__ == "__main__"):
 
             if (tasks[task_i].is_reach_steps_limit()):
                 print(f"Task [{args.env_names[task_i]}] is frozen.")
-                # 若未設定，則 indv_ranking 預設為原本順序
-                fitness_arr = np.array([actor.fitness for actor in tasks[task_i].actor])
-                indv_ranking[task_i] = np.argsort(np.argsort(-fitness_arr))
                 continue
 
             print("=============================================")
@@ -249,6 +250,10 @@ if (__name__ == "__main__"):
         # 更新之間關係 (九種可能性)
         for task_i in range(len(tasks)):
 
+            if (tasks[task_i].is_reach_steps_limit()):
+                print(f"Task [{args.env_names[task_i]}] is frozen.")
+                continue
+
             print("=============================================")
             print(f"Task [{args.env_names[task_i]}] is updating relations...")
             print("=============================================")
@@ -299,6 +304,11 @@ if (__name__ == "__main__"):
                             competition[task_i][task_j] += 1
                     else:
                         competition[task_i][task_i] += 1
+
+        # 檢查是否已經都達到 max steps 了
+        all_reach_max_steps = True
+        for task in tasks:
+            all_reach_max_steps = all_reach_max_steps and task.is_reach_steps_limit()
 
 
 
