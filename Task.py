@@ -39,6 +39,8 @@ class Task:
         
         # 上一次evaluation花多少步
         self.evaluate_steps = 0
+
+        self.update_cnt = 0
         
         # 用於固定random seed
         self.env.reset(seed = args.seed)

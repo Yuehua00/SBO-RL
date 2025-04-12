@@ -102,7 +102,8 @@ if (__name__ == "__main__"):
             # 更新 learning curve 裡的 mu actor
             tasks[task_i].mu_actor = gene_to_phene(tasks[task_i].mu_actor, tasks[task_i].cem.actor_mu[0])  # tasks[task_i].mu_actor[0] 是甚麼
             learning_curves[task_i].update(tasks[task_i].mu_actor)
-            print("mu actor updated")
+            tasks[task_i].update_cnt += 1
+            print(f"mu actor updated {tasks[task_i].update_cnt}")
 
             ###### 評估所有 offspring 的 actor ######
             tasks[task_i].evaluate_steps = 0
