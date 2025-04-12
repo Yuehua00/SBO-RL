@@ -235,9 +235,9 @@ if (__name__ == "__main__"):
                 actor.fitness = fitness
                 tasks[task_i].evaluate_steps += evaluate_steps
             
-            print(f"Task[{args.env_names[task_i]}] learning_curves steps is [{learning_curves[task_i].steps}]")
-            if learning_curves[task_i].steps % args.test_performance_freq == 0:
-                print(f"steps={learning_curves[task_i].learning_curve_steps[-1]}  score={learning_curves[task_i].learning_curve_scores[-1]:.3f}")
+            # print(f"Task[{args.env_names[task_i]}] learning_curves steps is [{learning_curves[task_i].steps}]")
+            # if learning_curves[task_i].steps % args.test_performance_freq == 0:
+            #     print(f"steps={learning_curves[task_i].learning_curve_steps[-1]}  score={learning_curves[task_i].learning_curve_scores[-1]:.3f}")
 
             # 排序(轉換過來的和原本的，由大到小) 
             # indv_ranking[task_i] = np.argsort(-tasks[task_i].actor)
