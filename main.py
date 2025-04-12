@@ -257,6 +257,8 @@ if (__name__ == "__main__"):
             harm_pos = int(ratio_help_neutral_harm[2] * actor_size)
 
             for index in range(actor_size): 
+                if indv_ranking[task_i] is None:
+                    continue
                 ranking = indv_ranking[task_i][index] # 在 offspring 中的排名
                 task_j = tasks[task_i].transfer_from # 從哪裡轉換來的
 
