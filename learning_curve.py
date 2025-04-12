@@ -46,8 +46,8 @@ class LearningCurve:
 
             self.learning_curve_steps.append(self.steps)
 
+            # [Debug]
             print(self.steps)
-            print(args.start_steps)
 
             if self.steps > args.start_steps:
                 score = self.test_performance(self.env_name, self.mu_actor)
