@@ -142,15 +142,12 @@ if (__name__ == "__main__"):
                 print(f"Task [{args.env_names[task_i]}] is frozen.")
                 continue
             
-            print("Hi")
             print("=============================================")
             print(f"Task [{args.env_names[task_i]}] is doing policy gradient...")
             print("=============================================")
 
-            print("start variate()")
             # 重新選取 actor population
             tasks[task_i].actor = tasks[task_i].cem.variate(tasks[task_i].actor, args.population_size)
-            print("[Main] Called variate() and updated actor population.")
                 
             # train
             print(f"Task [{args.env_names[task_i]}] train:")
