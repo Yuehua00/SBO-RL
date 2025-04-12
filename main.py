@@ -150,6 +150,12 @@ if (__name__ == "__main__"):
 
             # 重新選取 actor population
             tasks[task_i].actor = tasks[task_i].cem.variate(tasks[task_i].actor, args.population_size)
+
+            # 更新 learning curve 裡的 mu actor
+            tasks[task_i].mu_actor = gene_to_phene(tasks[task_i].mu_actor, tasks[task_i].cem.actor_mu[0])  # tasks[task_i].mu_actor[0] 是甚麼
+            learning_curves[task_i].update(tasks[task_i].mu_actor)
+            tasks[task_i].update_cnt += 1
+            print(f"[Task {args.env_names[task_i]}] mu_actor updated, current update_cnt = {tasks[task_i].update_cnt}")
                 
             # train
             print(f"Task [{args.env_names[task_i]}] train:")
