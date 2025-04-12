@@ -180,6 +180,9 @@ if (__name__ == "__main__"):
 
             if (tasks[task_i].is_reach_steps_limit()):
                 print(f"Task [{args.env_names[task_i]}] is frozen.")
+                # 若未設定，則 indv_ranking 預設為原本順序
+                fitness_arr = np.array([actor.fitness for actor in tasks[task_i].actor])
+                indv_ranking[task_i] = np.argsort(np.argsort(-fitness_arr))
                 continue
 
             print("=============================================")
@@ -257,8 +260,7 @@ if (__name__ == "__main__"):
             harm_pos = int(ratio_help_neutral_harm[2] * actor_size)
 
             for index in range(actor_size): 
-                if indv_ranking[task_i] is None:
-                    continue
+                
                 ranking = indv_ranking[task_i][index] # 在 offspring 中的排名
                 task_j = tasks[task_i].transfer_from # 從哪裡轉換來的
 
