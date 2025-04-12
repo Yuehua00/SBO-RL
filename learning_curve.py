@@ -42,7 +42,7 @@ class LearningCurve:
 
         self.steps += 1
 
-        if self.steps % args.test_performance_freq == 0:
+        if ((self.steps % args.test_performance_freq == 0) and (self.steps <= args.max_steps)):
 
             self.learning_curve_steps.append(self.steps)
 
@@ -91,24 +91,18 @@ class LearningCurve:
 
     def save(self, path: str):
 
-        if (not os.path.exists(args.output_path)):
-            os.makedirs(args.output_path)
-
-        # file_name = f"[{args.algorithm}][{args.env_name}][{args.seed}][{datetime.date.today()}][Learning Curve][{''.join(random.choices(string.ascii_uppercase, k=6))}].json"
-        # path = os.path.join(args.output_path, file_name)
-
-        result = {
-            "Config": vars(args),
-            "Learning Curve": {
-                "Steps": self.learning_curve_steps,
-                "Score": self.learning_curve_scores
+        with open(path, "w") as file:
+            json_data = {
+                "Config": vars(args),
+                "Learning Curve": {
+                    "Steps": self.learning_curve_steps,
+                    "Score": self.learning_curve_scores
+                }
             }
-        }
 
-        with open(path, mode="w") as file:
+            json.dump(json_data, file)
 
-            json.dump(result, file)
-
+            file.close()
 
 
 
