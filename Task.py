@@ -21,6 +21,16 @@ class Task:
         self.state_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.shape[0]
         self.max_action = torch.tensor(self.env.action_space.high).detach().to(args.device)
+
+        self.network_size = network_size = [
+            (self.state_dim, 400),
+            (400, 1),
+            (400, 300),
+            (300, 1),
+            (300, self.action_dim),
+            (self.action_dim, 1)
+        ]
+        self.max_network_size = None
         
         self.cem = CEM_IM()
         # self.ga = GA()
@@ -51,7 +61,7 @@ class Task:
     
     def init_mu_actor(self, max_state_dim, max_action_dim):
         mu_actor = Actor(max_state_dim, max_action_dim, self.max_action)
-        self.mu_actor_gene = phene_to_gene(mu_actor)
+        self.mu_actor_gene = phene_to_gene(mu_actor).to(args.device)
     
     def is_reach_start_steps(self):
         return self.steps >= args.start_steps
@@ -64,7 +74,7 @@ class Task:
     
     def evaluate(self, episodes: int, actor_: Individual, replay_buffer: ReplayBuffer, learning_curve: LearningCurve):
 
-        actor = gene_to_phene(self.model_actor, actor_.gene)
+        actor = gene_to_phene(self.model_actor, actor_.gene, self.network_size, self.max_network_size).to(args.device)
 
         with torch.no_grad():
             scores: list[float] = []

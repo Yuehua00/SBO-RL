@@ -16,21 +16,26 @@ from model import Actor
 
 class LearningCurve:
 
-    def __init__(self, env_name: str, model_actor: Actor, mu_actor_gene: list):
+    def __init__(self, env_name: str, model_actor: Actor, mu_actor_gene: list, network_size: list, max_network_size: list):
 
         self.steps = 0
         self.learning_curve_steps = []
         self.learning_curve_scores = []
         self.learning_curve_mu_actor = []
+        self.transfer_size = []
+        self.transfer_from = []
+
+        self.network_size = network_size
+        self.max_network_size = max_network_size
 
         self.env_name = env_name
-        self.mu_actor = gene_to_phene(deepcopy(model_actor), mu_actor_gene)
+        self.mu_actor = gene_to_phene(deepcopy(model_actor), mu_actor_gene, self.network_size, self.max_network_size).to(args.device)
 
         self.test_initial_performance()
 
 
     def update(self, mu_actor_gene: list):
-        self.mu_actor = gene_to_phene(self.mu_actor, mu_actor_gene)
+        self.mu_actor = gene_to_phene(self.mu_actor, mu_actor_gene, self.network_size, self.max_network_size).to(args.device)
 
 
     def test_initial_performance(self):
@@ -48,12 +53,11 @@ class LearningCurve:
             self.learning_curve_steps.append(self.steps)
 
             # [Debug]
-            print(self.steps)
+            # print(self.steps)
 
             if self.steps > args.start_steps:
                 score = self.test_performance(self.env_name, self.mu_actor)
                 self.learning_curve_scores.append(score)
-                print(f"[test_performance] score = {score}")
             else:
                 self.learning_curve_scores.append(self.learning_curve_scores[-1])
 
@@ -103,7 +107,9 @@ class LearningCurve:
                 "Learning Curve": {
                     "Steps": self.learning_curve_steps,
                     "Score": self.learning_curve_scores
-                }
+                },
+                "Transfer Size": self.transfer_size,
+                "Transfer From": self.transfer_from
             }
 
             json.dump(json_data, file)

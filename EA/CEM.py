@@ -59,7 +59,7 @@ class CEM_IM:
         epsilon = torch.randn(param_size, dtype=torch.float32, device=args.device)
         individual = (self.mu_actor_gene + epsilon * self.cov.sqrt()).view(-1)
 
-        new_actor: Individual = None
+        new_actor = Individual()
         new_actor.gene = individual
         new_actor.fitness = None
         
@@ -82,7 +82,7 @@ class CEM_IM:
         new_gene = self.mu_actor_gene + epsilon * self.cov.sqrt()
 
         actor_population: list[Individual] = []
-        actor_tmp: Individual = None
+        actor_tmp = Individual()
 
         for i in range(args.population_size):
 
@@ -102,8 +102,7 @@ class CEM_IM:
             actor_population.sort(key=lambda actor: actor.fitness, reverse=True)
 
             # genes = phenes_to_genes(actor_population)  # shape = (population_size , params_size)
-            genes = torch.stack(actor.gene for actor in actor_population)   # shape = (population_size , params_size)
-            print(genes.shape)
+            genes = torch.cat([actor.gene.unsqueeze(0) for actor in actor_population], dim=0)   # shape = (population_size , params_size)
 
             self.old_mu_gene = self.mu_actor_gene  # shape = (1, params_size)
             self.mu_actor_gene = torch.matmul(self.actor_parents_weights, genes[: self.actor_parents_size]).squeeze(0)  # (1 , actor_parents_size) * (actor_parents_size , params_size) -> (1 , params_size) -> (params_size,)
@@ -124,7 +123,7 @@ class CEM_IM:
             idx_reused = []
             old_samples: list[Individual] = actor_population
 
-            new_population: list[Individual] = [None] * offspring_size
+            new_population: list[Individual] = [Individual()] * offspring_size
 
             for i in range(offspring_size):
 

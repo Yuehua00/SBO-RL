@@ -2,6 +2,7 @@ import gymnasium as gym
 import torch
 import torch.nn.functional as F
 import numpy as np
+import math
 from copy import deepcopy
 import os
 from datetime import datetime
@@ -32,6 +33,17 @@ if (__name__ == "__main__"):
     max_state_dim = max([task.state_dim for task in tasks])
     max_action_dim = max([task.action_dim for task in tasks])
 
+    max_network_size = [
+        (max_state_dim, 400),
+        (400, 1),
+        (400, 300),
+        (300, 1),
+        (300, max_action_dim),
+        (max_action_dim, 1)
+    ]
+    for task in tasks:
+        task.max_network_size = max_network_size
+
     # 初始化 replay buffer
     replay_buffers = [ReplayBuffer(task.state_dim, task.action_dim) for task in tasks]
 
@@ -60,7 +72,7 @@ if (__name__ == "__main__"):
 
     ###### 初始化 learning curve ######
     learning_curves=[
-        LearningCurve(args.env_names[task_i], tasks[task_i].model_actor, tasks[task_i].mu_actor_gene) for task_i in range(len(tasks))
+        LearningCurve(args.env_names[task_i], tasks[task_i].model_actor, tasks[task_i].mu_actor_gene, tasks[task_i].network_size, max_network_size) for task_i in range(len(tasks))
     ]
 
     ###### 最一開始的 population 計算 fitness ######
@@ -99,7 +111,7 @@ if (__name__ == "__main__"):
             tasks[task_i].actors = tasks[task_i].cem.variate(tasks[task_i].actors, args.population_size)
 
             # 更新 learning curve 裡的 mu actor
-            tasks[task_i].mu_actor_gene = tasks[task_i].cem.actor_mu_gene
+            tasks[task_i].mu_actor_gene = tasks[task_i].cem.mu_actor_gene
             learning_curves[task_i].update(tasks[task_i].mu_actor_gene)
             
             ###### 評估所有 offsprings 的 actor ######
@@ -109,7 +121,7 @@ if (__name__ == "__main__"):
             print(f"Current steps: {tasks[task_i].steps}")
 
             for actor in tasks[task_i].actors:
-                fitness, evaluate_steps = tasks[task_i].evaluate(1, actor[i].gene, replay_buffers[task_i], learning_curves[task_i])
+                fitness, evaluate_steps = tasks[task_i].evaluate(1, actor, replay_buffers[task_i], learning_curves[task_i])
                 actor.fitness = fitness 
                 tasks[task_i].evaluate_steps += evaluate_steps
 
@@ -157,7 +169,7 @@ if (__name__ == "__main__"):
             half_size = len(tasks[task_i].actors) // 2
             for i in range(half_size):
 
-                actor = gene_to_phene(tasks[task_i].model_actor, tasks[task_i].actors[i].gene)
+                actor = gene_to_phene(tasks[task_i].model_actor, tasks[task_i].actors[i].gene, tasks[task_i].network_size, tasks[task_i].max_network_size)
                 actor_optimizer = torch.optim.Adam(actor.parameters(), lr=args.actor_learning_rate)
                 # actor_target = deepcopy(actor).requires_grad_(False)
 
@@ -167,11 +179,15 @@ if (__name__ == "__main__"):
                 for _ in range(tasks[task_i].evaluate_steps):
                     train_actor(actor, actor_optimizer, critic, replay_buffer)
 
-                local_phene_to_gene(actor, tasks[task_i].actors[i].gene)
+                local_phene_to_gene(actor, tasks[task_i].actors[i].gene, tasks[task_i].network_size, tasks[task_i].max_network_size)
 
             # 更新 learning curve 裡的 mu actor
-            tasks[task_i].mu_actor_gene = tasks[task_i].cem.actor_mu_gene  # tasks[task_i].mu_actor[0] 是甚麼
+            tasks[task_i].mu_actor_gene = tasks[task_i].cem.mu_actor_gene  # tasks[task_i].mu_actor[0] 是甚麼
             learning_curves[task_i].update(tasks[task_i].mu_actor_gene)
+
+            print(f"Task [{args.env_names[task_i]}] evaluate:")
+            print(f"Current steps: {tasks[task_i].steps}")
+            print(f"Score: {learning_curves[task_i].learning_curve_mu_scores[-1]}")
 
         indv_ranking: list[np.ndarray] = [None for _ in range(len(tasks))]
         
@@ -209,13 +225,15 @@ if (__name__ == "__main__"):
             tasks[task_i].transfer_from = None
             if r >= np.random.uniform(0, 1):
                 lambda_i = len(tasks[task_i].actors)
-                s = r * lambda_i  # s = r * args.population_size
+                s = math.floor(r * lambda_i)  # s = r * args.population_size
                 if s < 1:
                     s = 1
                 # 紀錄多少轉換
                 adapt_transfer_size[task_i][task_j] = s
+                learning_curves[task_i].transfer_size.append(s)
                 # 從哪裡轉換
                 tasks[task_i].transfer_from = task_j
+                learning_curves[task_i].transfer_from.append(task_j)
                 # 轉換(要轉換的、要轉換過去的、轉換數量)
                 ga.transfer(tasks[task_i].actors, tasks[task_j].actors, s)
                 # tasks[task_i].actors[lambda_i-s :] = tasks[task_j].actor[ : s]
@@ -227,8 +245,8 @@ if (__name__ == "__main__"):
             print(f"Current steps: {tasks[task_i].steps}")
 
             for individual in tasks[task_i].actors:
-                actor = gene_to_phene(tasks[task_i].model_actor, individual.gene)
-                fitness, evaluate_steps = tasks[task_i].evaluate(1, actor, replay_buffers[task_i], learning_curves[task_i])
+                # actor = gene_to_phene(tasks[task_i].model_actor, individual.gene, tasks[task_i].network_size, tasks[task_i].max_network_size)
+                fitness, evaluate_steps = tasks[task_i].evaluate(1, individual, replay_buffers[task_i], learning_curves[task_i])
                 print(f"Actor fitness = {fitness}")
                 individual.fitness = fitness
                 tasks[task_i].evaluate_steps += evaluate_steps
