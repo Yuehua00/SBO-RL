@@ -5,9 +5,10 @@ import gymnasium as gym
 from copy import deepcopy
 
 from config import args
-from model import Actor, Critic
-from EA.CEM import CEM
+from model import Actor, Critic, Individual
+from EA.CEM import CEM_IM
 from EA.GA import GA
+from EA.EA_utils import phene_to_gene, gene_to_phene
 from learning_curve import LearningCurve
 from replay_buffer import ReplayBuffer
 
@@ -21,12 +22,15 @@ class Task:
         self.action_dim = self.env.action_space.shape[0]
         self.max_action = torch.tensor(self.env.action_space.high).detach().to(args.device)
         
-        self.cem = CEM()
-        self.ga = GA()
+        self.cem = CEM_IM()
+        # self.ga = GA()
 
         # actor
-        self.mu_actor = Actor(self.state_dim, self.action_dim, self.max_action).to(args.device)
-        self.actor = []
+        self.mu_actor_gene = None
+        self.actors: list[Individual] = []
+
+        self.model_actor = Actor(self.state_dim, self.action_dim, self.max_action)
+
         # critic
         self.critic = Critic(self.state_dim, self.action_dim).to(args.device)
         self.critic_target = deepcopy(self.critic).requires_grad_(False)
@@ -43,6 +47,11 @@ class Task:
         # 用於固定random seed
         self.env.reset(seed=args.seed)
         self.env.action_space.seed(args.seed)
+
+    
+    def init_mu_actor(self, max_state_dim, max_action_dim):
+        mu_actor = Actor(max_state_dim, max_action_dim, self.max_action)
+        self.mu_actor_gene = phene_to_gene(mu_actor)
     
     def is_reach_start_steps(self):
         return self.steps >= args.start_steps
@@ -50,10 +59,13 @@ class Task:
     def is_reach_steps_limit(self):
         return self.steps >= args.max_steps
     
-    def init_actor(self):
-        self.actor = self.cem.get_init_actor_population(self.mu_actor)
+    def init_actors(self):
+        self.actors = self.cem.get_init_actor_population(self.mu_actor_gene)
     
-    def evaluate(self, episodes: int, actor: Actor, replay_buffer: ReplayBuffer, learning_curve: LearningCurve):
+    def evaluate(self, episodes: int, actor_: Individual, replay_buffer: ReplayBuffer, learning_curve: LearningCurve):
+
+        actor = gene_to_phene(self.model_actor, actor_.gene)
+
         with torch.no_grad():
             scores: list[float] = []
             evaluate_steps = 0
@@ -75,10 +87,11 @@ class Task:
                     replay_buffer.push(state, action, next_state, reward, not done)
                     state = next_state
                 scores.append(episode_score)
+                
         return np.mean(scores), evaluate_steps
     
-    def survive(self, population: list[Actor], offspring: list[Actor]):
-        # mu_and_lambda = population + offspring
+    def survive(self, population: list[Individual], offspring: list[Individual]):
+        # mu_and_lambda = population + Individual
         # mu_and_lambda.sort(key = lambda actor: actor.fitness, reverse = True)
         # # (mu + lambda) surivivial selection
         # population[:] = mu_and_lambda[:args.population_size]

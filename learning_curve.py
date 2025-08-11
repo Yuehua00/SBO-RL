@@ -7,6 +7,7 @@ import datetime
 import random
 import string
 from copy import deepcopy
+from EA.EA_utils import gene_to_phene
 
 
 from config import args
@@ -15,7 +16,7 @@ from model import Actor
 
 class LearningCurve:
 
-    def __init__(self, env_name: str, mu_actor: Actor):
+    def __init__(self, env_name: str, model_actor: Actor, mu_actor_gene: list):
 
         self.steps = 0
         self.learning_curve_steps = []
@@ -23,13 +24,13 @@ class LearningCurve:
         self.learning_curve_mu_actor = []
 
         self.env_name = env_name
-        self.mu_actor = deepcopy(mu_actor)
+        self.mu_actor = gene_to_phene(deepcopy(model_actor), mu_actor_gene)
 
         self.test_initial_performance()
 
 
-    def update(self, mu_actor: Actor):
-        self.mu_actor = deepcopy(mu_actor)
+    def update(self, mu_actor_gene: list):
+        self.mu_actor = gene_to_phene(self.mu_actor, mu_actor_gene)
 
 
     def test_initial_performance(self):
@@ -90,6 +91,11 @@ class LearningCurve:
 
 
     def save(self, path: str):
+
+        os.makedirs(args.output_path, exist_ok=True)
+
+        file_name = f"[{args.algorithm}][{args.env_name}][{args.seed}][{datetime.date.today()}][Learning Curve][{''.join(random.choices(string.ascii_uppercase, k=6))}].json"
+        path = os.path.join(args.output_path, file_name)
 
         with open(path, "w") as file:
             json_data = {

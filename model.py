@@ -14,6 +14,8 @@ class Actor(nn.Module):
 		self.l3 = nn.Linear(300, action_dim)
 		
 		self.max_action = max_action
+
+		self.network_size = [state_dim, 400, 300, action_dim]
 		
 		self.fitness = None
 
@@ -66,4 +68,9 @@ class Critic(nn.Module):
 		return q1
 
 
+class Individual:
 
+	def __init__(self):
+		
+		self.gene: list = []
+		self.fitness = None
