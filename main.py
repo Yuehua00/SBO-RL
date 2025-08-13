@@ -331,7 +331,7 @@ if (__name__ == "__main__"):
     ###### 儲存結果 ######
     if args.save_result == True:
         for i in range(len(tasks)):
-            learning_curves[i].save(os.path.join(args.output_folder, f"[{args.env_names[i]}]Learning Curve.json"))
+            learning_curves[i].save(os.path.join(args.output_path, f"[{args.env_names[i]}]Learning Curve.json"))
 
     end_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -339,7 +339,7 @@ if (__name__ == "__main__"):
     print(f"End date: {end_date}")
 
     if (args.save_result):
-        with open(os.path.join(args.output_folder, "info.txt"), mode = "w") as file:
+        with open(os.path.join(args.output_path, "info.txt"), mode = "w") as file:
             file.write(f"Start date: {start_date}\n")
             file.write(f"End date: {end_date}\n")
             file.close()
