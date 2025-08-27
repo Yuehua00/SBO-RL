@@ -22,14 +22,15 @@ class Task:
         self.action_dim = self.env.action_space.shape[0]
         self.max_action = torch.tensor(self.env.action_space.high).detach().to(args.device)
 
-        self.network_size = network_size = [
-            (self.state_dim, 400),
-            (400, 1),
-            (400, 300),
-            (300, 1),
-            (300, self.action_dim),
-            (self.action_dim, 1)
+        self.network_size = [
+            (400, self.state_dim),    
+            (1, 400),
+            (300, 400),
+            (1, 300),
+            (self.action_dim, 300),
+            (1, self.action_dim)
         ]
+
         self.max_network_size = None
         
         self.cem = CEM_IM()

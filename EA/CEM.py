@@ -35,6 +35,8 @@ class CEM_IM:
 
         self.n_reused_list = []
         self.reused_idx_list = []
+        self.reused_number = 0
+        self.reused_idx = []
 
 
     def old_log_pdf(self, sample: list):
@@ -62,11 +64,13 @@ class CEM_IM:
         new_actor = Individual()
         new_actor.gene = individual
         new_actor.fitness = None
+        new_actor.transfer_from = None
+        new_actor.alpha = None
         
         return new_actor
 
 
-    def get_init_actor_population(self, mu_actor_gene: list) -> list[Individual]:
+    def get_init_actor_population(self, mu_actor_gene: torch.tensor) -> list[Individual]:
 
         self.mu_actor_gene = mu_actor_gene
         params_size = self.mu_actor_gene.shape[0]
@@ -82,19 +86,18 @@ class CEM_IM:
         new_gene = self.mu_actor_gene + epsilon * self.cov.sqrt()
 
         actor_population: list[Individual] = []
-        actor_tmp = Individual()
 
         for i in range(args.population_size):
 
+            actor_tmp = Individual()
             actor_tmp.gene = new_gene[i]
-            actor_tmp.fitness = None
 
             actor_population.append(actor_tmp)
 
         return actor_population
 
 
-    def variate(self, actor_population: list[Individual], offspring_size: int) -> list[Individual]:
+    def variate(self, actor_population: list[Individual], offspring_size: int):
 
         with torch.no_grad():
 
@@ -123,7 +126,9 @@ class CEM_IM:
             idx_reused = []
             old_samples: list[Individual] = actor_population
 
-            new_population: list[Individual] = [Individual()] * offspring_size
+            new_population: list[Individual] = [Individual() for _ in range(offspring_size)]
+
+            individual_life = []
 
             for i in range(offspring_size):
 
@@ -134,9 +139,13 @@ class CEM_IM:
                     u = np.random.uniform(0, 1)
                     if np.log(u) < self.new_log_pdf(sample.gene) - self.old_log_pdf(sample.gene):
                         
+                        sample.life += 1
                         new_population[n_reused] = sample
                         idx_reused.append(i)
                         n_reused += 1
+                    
+                    else:
+                        individual_life.append(sample.life)
                 
                 if n_reused + n_sampled < args.population_size:
 
@@ -163,22 +172,24 @@ class CEM_IM:
 
             self.n_reused_list.append(n_reused)
             self.reused_idx_list.append(idx_reused)
+            self.reused_number = n_reused
+            self.reused_idx = idx_reused
 
-            return new_population
+            return new_population, individual_life
         
     
-    def save(self, env_name):
+    # def save(self, env_name):
 
-        os.makedirs(args.output_path, exist_ok=True)
+    #     os.makedirs(args.output_path, exist_ok=True)
 
-        file_name = f"[{args.algorithm}][{env_name}][{args.seed}][{datetime.date.today()}][Reused Information][{''.join(random.choices(string.ascii_uppercase, k=6))}].json"
-        path = os.path.join(args.output_path, file_name)
+    #     file_name = f"[{args.algorithm}][{env_name}][{args.seed}][{datetime.date.today()}][Reused Information][{''.join(random.choices(string.ascii_uppercase, k=6))}].json"
+    #     path = os.path.join(args.output_path, file_name)
 
-        result = {
-            "Number of reused" : self.n_reused_list,
-            "Reused idndex" : self.reused_idx_list
-        }
+    #     result = {
+    #         "Number of reused" : self.n_reused_list,
+    #         "Reused idndex" : self.reused_idx_list
+    #     }
 
-        with open(path, mode='w') as file:
+    #     with open(path, mode='w') as file:
             
-            json.dump(result, file)
+    #         json.dump(result, file)

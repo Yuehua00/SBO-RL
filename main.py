@@ -34,12 +34,12 @@ if (__name__ == "__main__"):
     max_action_dim = max([task.action_dim for task in tasks])
 
     max_network_size = [
-        (max_state_dim, 400),
-        (400, 1),
-        (400, 300),
-        (300, 1),
-        (300, max_action_dim),
-        (max_action_dim, 1)
+        (400, max_state_dim),
+        (1, 400),
+        (300, 400),
+        (1, 300),
+        (max_action_dim, 300),
+        (1, max_action_dim)
     ]
     for task in tasks:
         task.max_network_size = max_network_size
@@ -72,7 +72,7 @@ if (__name__ == "__main__"):
 
     ###### 初始化 learning curve ######
     learning_curves=[
-        LearningCurve(args.env_names[task_i], tasks[task_i].model_actor, tasks[task_i].mu_actor_gene, tasks[task_i].network_size, max_network_size) for task_i in range(len(tasks))
+        LearningCurve(args.env_names[task_i], tasks[task_i].model_actor, tasks[task_i].mu_actor_gene, tasks[task_i].network_size, max_network_size, task_i) for task_i in range(len(tasks))
     ]
 
     ###### 最一開始的 population 計算 fitness ######
@@ -82,14 +82,14 @@ if (__name__ == "__main__"):
 
         for actor in task.actors:
             fitness, evaluate_steps = task.evaluate(1, actor, replay_buffers[task_i], learning_curves[task_i])
-            print(f"Actor fitness = {fitness}")
+            # print(f"Actor fitness = {fitness}")
             actor.fitness = fitness
             task.evaluate_steps += evaluate_steps
 
         # [Debug]
         avg_fitness = 0
         for i, actor in enumerate(tasks[task_i].actors):
-            # print(f"Actor {i} fitness: {actor.fitness: .4f}")
+            print(f"Actor {i} fitness: {actor.fitness: .4f}")
             avg_fitness += actor.fitness
         avg_fitness /= len(tasks[task_i].actors)
         print("=============================================")
@@ -108,11 +108,12 @@ if (__name__ == "__main__"):
                 continue
         
             # CEM 抽新的 offsprings
-            tasks[task_i].actors = tasks[task_i].cem.variate(tasks[task_i].actors, args.population_size)
+            tasks[task_i].actors, individual_life = tasks[task_i].cem.variate(tasks[task_i].actors, args.population_size)
+            learning_curves[task_i].individual_life = individual_life
 
             # 更新 learning curve 裡的 mu actor
             tasks[task_i].mu_actor_gene = tasks[task_i].cem.mu_actor_gene
-            learning_curves[task_i].update(tasks[task_i].mu_actor_gene)
+            learning_curves[task_i].update(tasks[task_i].mu_actor_gene, tasks[task_i].reused_number, tasks[task_i].reused_idx)
             
             ###### 評估所有 offsprings 的 actor ######
             tasks[task_i].evaluate_steps = 0
@@ -155,8 +156,9 @@ if (__name__ == "__main__"):
             print("=============================================")
 
             # 重新選取 actor population
-            tasks[task_i].actors = tasks[task_i].cem.variate(tasks[task_i].actors, args.population_size)
-               
+            tasks[task_i].actors, individual_life = tasks[task_i].cem.variate(tasks[task_i].actors, args.population_size)
+            learning_curves[task_i].individual_life = individual_life
+
             # train
             print(f"Task [{args.env_names[task_i]}] train:")
 
@@ -183,7 +185,7 @@ if (__name__ == "__main__"):
 
             # 更新 learning curve 裡的 mu actor
             tasks[task_i].mu_actor_gene = tasks[task_i].cem.mu_actor_gene  # tasks[task_i].mu_actor[0] 是甚麼
-            learning_curves[task_i].update(tasks[task_i].mu_actor_gene)
+            learning_curves[task_i].update(tasks[task_i].mu_actor_gene, tasks[task_i].reused_number, tasks[task_i].reused_idx)
 
             print(f"Task [{args.env_names[task_i]}] evaluate:")
             print(f"Current steps: {tasks[task_i].steps}")
@@ -223,20 +225,29 @@ if (__name__ == "__main__"):
                 # rate_transfer[task_i][j] = r_j
 
             tasks[task_i].transfer_from = None
+            transfer_record = [0 for _ in range(len(args.env_names))]
             if r >= np.random.uniform(0, 1):
                 lambda_i = len(tasks[task_i].actors)
                 s = math.floor(r * lambda_i)  # s = r * args.population_size
+                learning_curves[task_i].once_transfer_size = s
                 if s < 1:
                     s = 1
                 # 紀錄多少轉換
                 adapt_transfer_size[task_i][task_j] = s
-                learning_curves[task_i].transfer_size.append(s)
                 # 從哪裡轉換
                 tasks[task_i].transfer_from = task_j
-                learning_curves[task_i].transfer_from.append(task_j)
+                transfer_record[task_j] = s
                 # 轉換(要轉換的、要轉換過去的、轉換數量)
                 ga.transfer(tasks[task_i].actors, tasks[task_j].actors, s)
                 # tasks[task_i].actors[lambda_i-s :] = tasks[task_j].actor[ : s]
+            else:
+                learning_curves[task_i].once_transfer_size = 0
+
+            for i, number in enumerate(transfer_record):
+                learning_curves[task_i].once_transfer_record[i] = number
+
+            print(f"Task [{args.env_names[task_i]}]")
+            print(f"{transfer_record}")
 
 
             ###### Evaluate ######
@@ -244,13 +255,36 @@ if (__name__ == "__main__"):
             print(f"Task [{args.env_names[task_i]}] evaluate:")
             print(f"Current steps: {tasks[task_i].steps}")
 
+
             for individual in tasks[task_i].actors:
                 # actor = gene_to_phene(tasks[task_i].model_actor, individual.gene, tasks[task_i].network_size, tasks[task_i].max_network_size)
                 fitness, evaluate_steps = tasks[task_i].evaluate(1, individual, replay_buffers[task_i], learning_curves[task_i])
-                print(f"Actor fitness = {fitness}")
                 individual.fitness = fitness
                 tasks[task_i].evaluate_steps += evaluate_steps
-            
+
+            transfer_in_five_num = 0
+            if (not tasks[task_i].is_reach_steps_limit()):
+                tasks[task_i].actors.sort(key = lambda actor: actor.fitness, reverse = True)
+
+                # [Debug]
+                avg_fitness = 0
+                for i, actor in enumerate(tasks[task_i].actors):
+                    print(f"Actor {i} fitness: {actor.fitness}")
+                    avg_fitness += actor.fitness
+
+                    # 紀錄交流來個體中，有多少是在前五名內
+                    if (actor.transfer_from is not None) and (actor.transfer_from != task_i) and (i < 5):
+                        transfer_in_five_num +=1
+
+                    avg_fitness /= len(tasks[task_i].actors)
+                    print("=============================================")
+                    print(f"Task [{args.env_names[task_i]}] avg fitness: {avg_fitness: .4f}")
+                    print("=============================================")
+            else:
+                print(f"Task [{args.env_names[task_i]}] is frozen.")
+
+            learning_curves[task_i].transfer_in_five_num = transfer_in_five_num
+
             # print(f"Task[{args.env_names[task_i]}] learning_curves steps is [{learning_curves[task_i].steps}]")
             # if learning_curves[task_i].steps % args.test_performance_freq == 0:
             #     print(f"steps={learning_curves[task_i].learning_curve_steps[-1]}  score={learning_curves[task_i].learning_curve_scores[-1]:.3f}")
@@ -290,7 +324,7 @@ if (__name__ == "__main__"):
                     continue
 
                 transfer_pos = int(actor_size - adapt_transfer_size[task_i][task_j])  # 哪一個 index 開始被轉換
-                if index < help_pos:
+                if ranking < help_pos:
                     if index >= transfer_pos:  # 是被交換來的
                         if ranking < help_pos:
                             mutualism[task_i][task_j] += 1
@@ -300,7 +334,7 @@ if (__name__ == "__main__"):
                             parasitism[task_i][task_j] += 1
                     else:
                         mutualism[task_i][task_i] += 1
-                if index < neutral_pos:
+                if ranking < neutral_pos:
                     if index >= transfer_pos:
                         if ranking < help_pos:
                             continue
@@ -310,7 +344,7 @@ if (__name__ == "__main__"):
                             amensalism[task_i][task_j] += 1
                     else:
                         neutralism[task_i][task_i] += 1
-                if index < harm_pos:
+                if ranking < harm_pos:
                     if index >= transfer_pos:
                         if ranking < help_pos:
                             continue
