@@ -113,7 +113,7 @@ if (__name__ == "__main__"):
 
             # 更新 learning curve 裡的 mu actor
             tasks[task_i].mu_actor_gene = tasks[task_i].cem.mu_actor_gene
-            learning_curves[task_i].update(tasks[task_i].mu_actor_gene, tasks[task_i].reused_number, tasks[task_i].reused_idx)
+            learning_curves[task_i].update(tasks[task_i].mu_actor_gene, tasks[task_i].cem.reused_number, tasks[task_i].cem.reused_idx)
             
             ###### 評估所有 offsprings 的 actor ######
             tasks[task_i].evaluate_steps = 0
@@ -136,9 +136,9 @@ if (__name__ == "__main__"):
             print(f"Task [{args.env_names[task_i]}] avg fitness: {avg_fitness: .4f}")
             print("=============================================")
 
-            all_reach_start_steps = True
-            for task in tasks:
-                all_reach_start_steps = all_reach_start_steps and task.is_reach_start_steps()
+        all_reach_start_steps = True
+        for task in tasks:
+            all_reach_start_steps = all_reach_start_steps and task.is_reach_start_steps()
 
 
     ###### 主循環 ######
@@ -185,11 +185,7 @@ if (__name__ == "__main__"):
 
             # 更新 learning curve 裡的 mu actor
             tasks[task_i].mu_actor_gene = tasks[task_i].cem.mu_actor_gene  # tasks[task_i].mu_actor[0] 是甚麼
-            learning_curves[task_i].update(tasks[task_i].mu_actor_gene, tasks[task_i].reused_number, tasks[task_i].reused_idx)
-
-            print(f"Task [{args.env_names[task_i]}] evaluate:")
-            print(f"Current steps: {tasks[task_i].steps}")
-            print(f"Score: {learning_curves[task_i].learning_curve_mu_scores[-1]}")
+            learning_curves[task_i].update(tasks[task_i].mu_actor_gene, tasks[task_i].cem.reused_number, tasks[task_i].cem.reused_idx)
 
         indv_ranking: list[np.ndarray] = [None for _ in range(len(tasks))]
         
@@ -229,16 +225,16 @@ if (__name__ == "__main__"):
             if r >= np.random.uniform(0, 1):
                 lambda_i = len(tasks[task_i].actors)
                 s = math.floor(r * lambda_i)  # s = r * args.population_size
-                learning_curves[task_i].once_transfer_size = s
                 if s < 1:
                     s = 1
+                learning_curves[task_i].once_transfer_size = s
                 # 紀錄多少轉換
                 adapt_transfer_size[task_i][task_j] = s
                 # 從哪裡轉換
                 tasks[task_i].transfer_from = task_j
                 transfer_record[task_j] = s
                 # 轉換(要轉換的、要轉換過去的、轉換數量)
-                ga.transfer(tasks[task_i].actors, tasks[task_j].actors, s)
+                ga.transfer(tasks[task_i].actors, tasks[task_j].actors, s, task_j)
                 # tasks[task_i].actors[lambda_i-s :] = tasks[task_j].actor[ : s]
             else:
                 learning_curves[task_i].once_transfer_size = 0
@@ -247,6 +243,7 @@ if (__name__ == "__main__"):
                 learning_curves[task_i].once_transfer_record[i] = number
 
             print(f"Task [{args.env_names[task_i]}]")
+            print(f"transfer from task [{args.env_names[task_j]}] with size {learning_curves[task_i].once_transfer_size}")
             print(f"{transfer_record}")
 
 
@@ -254,6 +251,7 @@ if (__name__ == "__main__"):
             tasks[task_i].evaluate_steps = 0
             print(f"Task [{args.env_names[task_i]}] evaluate:")
             print(f"Current steps: {tasks[task_i].steps}")
+            print(f"Score: {learning_curves[task_i].learning_curve_scores[-1]}")
 
 
             for individual in tasks[task_i].actors:
@@ -276,18 +274,14 @@ if (__name__ == "__main__"):
                     if (actor.transfer_from is not None) and (actor.transfer_from != task_i) and (i < 5):
                         transfer_in_five_num +=1
 
-                    avg_fitness /= len(tasks[task_i].actors)
-                    print("=============================================")
-                    print(f"Task [{args.env_names[task_i]}] avg fitness: {avg_fitness: .4f}")
-                    print("=============================================")
+                avg_fitness /= len(tasks[task_i].actors)
+                print("=============================================")
+                print(f"Task [{args.env_names[task_i]}] avg fitness: {avg_fitness: .4f}")
+                print("=============================================")
             else:
                 print(f"Task [{args.env_names[task_i]}] is frozen.")
 
             learning_curves[task_i].transfer_in_five_num = transfer_in_five_num
-
-            # print(f"Task[{args.env_names[task_i]}] learning_curves steps is [{learning_curves[task_i].steps}]")
-            # if learning_curves[task_i].steps % args.test_performance_freq == 0:
-            #     print(f"steps={learning_curves[task_i].learning_curve_steps[-1]}  score={learning_curves[task_i].learning_curve_scores[-1]:.3f}")
 
             # 排序(轉換過來的和原本的，由大到小) 
             # indv_ranking[task_i] = np.argsort(-tasks[task_i].actors)
@@ -304,9 +298,7 @@ if (__name__ == "__main__"):
                 print(f"Task [{args.env_names[task_i]}] is frozen.")
                 continue
 
-            print("=============================================")
             print(f"Task [{args.env_names[task_i]}] is updating relations...")
-            print("=============================================")
 
             actor_size = len(tasks[task_i].actors)
             # transfer_pos = int(actor_size - adapt_transfer_size[task_i])  # 哪一個 index 開始被轉換

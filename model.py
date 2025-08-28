@@ -72,4 +72,8 @@ class Individual:
 		
 		self.gene: list = []
 		self.fitness = None
+
+		self.transfer_from = None
+
+		self.life = 1
 		

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from copy import deepcopy
 
 from model import Individual
 
@@ -66,11 +67,14 @@ class GA:
 
     #     return offsprings
 
-    def transfer(self, task_i_actors: list[Individual], task_j_actors: list[Individual], transfer_size: int) -> list[Individual]:
+    def transfer(self, task_i_actors: list[Individual], task_j_actors: list[Individual], transfer_size: int, task_j: int) -> list[Individual]:
 
-        task_i_actors[-transfer_size:] = task_j_actors[-transfer_size:]
+        transferred = [deepcopy(actor) for actor in task_j_actors[-transfer_size:]]
 
-        for actor in task_i_actors[-transfer_size:]:
+        for actor in transferred:
             actor.fitness = None
+            actor.transfer_from = task_j
+
+        task_i_actors[-transfer_size:] = transferred
 
         return task_i_actors

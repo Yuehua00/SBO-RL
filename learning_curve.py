@@ -21,7 +21,6 @@ class LearningCurve:
         self.steps = 0
         self.learning_curve_steps = []
         self.learning_curve_scores = []
-        self.learning_curve_mu_actor = []
 
         self.network_size = network_size
         self.max_network_size = max_network_size
@@ -132,7 +131,7 @@ class LearningCurve:
 
         os.makedirs(args.output_path, exist_ok=True)
 
-        file_name = f"[{args.algorithm}][{args.env_name}][{args.seed}][{datetime.date.today()}][Learning Curve][{''.join(random.choices(string.ascii_uppercase, k=6))}].json"
+        file_name = f"[{args.algorithm}][{self.env_name}][{args.seed}][{datetime.date.today()}][Learning Curve][{''.join(random.choices(string.ascii_uppercase, k=6))}].json"
         path = os.path.join(args.output_path, file_name)
 
         with open(path, "w") as file:
