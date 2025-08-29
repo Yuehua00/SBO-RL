@@ -143,6 +143,7 @@ if (__name__ == "__main__"):
 
     ###### 主循環 ######
     all_reach_max_steps = False
+    indv_ranking: list[np.ndarray] = [None for _ in range(len(tasks))]
     while(not all_reach_max_steps):
         
         for task_i in range(len(tasks)):
@@ -157,6 +158,8 @@ if (__name__ == "__main__"):
 
             # 重新選取 actor population
             tasks[task_i].actors, individual_life = tasks[task_i].cem.variate(tasks[task_i].actors, args.population_size)
+            for x in tasks[task_i].actors:
+                x.transfer_from = None
             learning_curves[task_i].individual_life = individual_life
 
             # train
@@ -186,8 +189,6 @@ if (__name__ == "__main__"):
             # 更新 learning curve 裡的 mu actor
             tasks[task_i].mu_actor_gene = tasks[task_i].cem.mu_actor_gene  # tasks[task_i].mu_actor[0] 是甚麼
             learning_curves[task_i].update(tasks[task_i].mu_actor_gene, tasks[task_i].cem.reused_number, tasks[task_i].cem.reused_idx)
-
-        indv_ranking: list[np.ndarray] = [None for _ in range(len(tasks))]
         
         for task_i in range(len(tasks)):
 
@@ -210,6 +211,7 @@ if (__name__ == "__main__"):
                 # 計算 transfer rata
                 positive = mutualism[task_i][j] + commensalism[task_i][j] + parasitism[task_i][j]
                 negative = neutralism[task_i][j] + amensalism[task_i][j] + competition[task_i][j]
+
                 r_j = positive / (positive + negative + 1e-15)
 
                 if r_j > 0.5:
@@ -219,7 +221,8 @@ if (__name__ == "__main__"):
                     r = r_j
                     task_j = j
                 # rate_transfer[task_i][j] = r_j
-
+            print(r)
+            print("----------------------------------------")
             tasks[task_i].transfer_from = None
             transfer_record = [0 for _ in range(len(args.env_names))]
             if r >= np.random.uniform(0, 1):
@@ -267,7 +270,7 @@ if (__name__ == "__main__"):
                 # [Debug]
                 avg_fitness = 0
                 for i, actor in enumerate(tasks[task_i].actors):
-                    print(f"Actor {i} fitness: {actor.fitness}")
+                    print(f"Actor {i} fitness: {actor.fitness} transfer from {actor.transfer_from}")
                     avg_fitness += actor.fitness
 
                     # 紀錄交流來個體中，有多少是在前五名內
@@ -294,58 +297,88 @@ if (__name__ == "__main__"):
         # 更新之間關係 (九種可能性)
         for task_i in range(len(tasks)):
 
-            if (tasks[task_i].is_reach_steps_limit()):
+            if tasks[task_i].is_reach_steps_limit():
                 print(f"Task [{args.env_names[task_i]}] is frozen.")
                 continue
 
             print(f"Task [{args.env_names[task_i]}] is updating relations...")
 
             actor_size = len(tasks[task_i].actors)
-            # transfer_pos = int(actor_size - adapt_transfer_size[task_i])  # 哪一個 index 開始被轉換
+
             help_pos = int(ratio_help_neutral_harm[0] * actor_size)
             neutral_pos = int(ratio_help_neutral_harm[1] * actor_size)
             harm_pos = int(ratio_help_neutral_harm[2] * actor_size)
 
-            for index in range(actor_size): 
-                
-                ranking = indv_ranking[task_i][index] # 在 offsprings 中的排名
-                task_j = tasks[task_i].transfer_from # 從哪裡轉換來的
+            # -------------------------------
+            # Help 區間
+            # -------------------------------
+            for index in range(help_pos):
+                task_j = tasks[task_i].actors[index].transfer_from  # 個體的來源任務
 
                 # 沒有轉換
                 if task_j is None:
+                    mutualism[task_i][task_i] += 1
                     continue
 
-                transfer_pos = int(actor_size - adapt_transfer_size[task_i][task_j])  # 哪一個 index 開始被轉換
-                if ranking < help_pos:
-                    if index >= transfer_pos:  # 是被交換來的
-                        if ranking < help_pos:
-                            mutualism[task_i][task_j] += 1
-                        elif ranking < neutral_pos:
-                            commensalism[task_i][task_j] += 1
-                        elif ranking < harm_pos:
-                            parasitism[task_i][task_j] += 1
+                transfer_pos = actor_size - adapt_transfer_size[task_i][task_j]
+                if index >= transfer_pos:  # 轉換來的
+                    src_rank = indv_ranking[task_j][index]  # 在來源 task 的排名
+
+                    if src_rank < help_pos:
+                        mutualism[task_i][task_j] += 1
+                    elif src_rank < neutral_pos:
+                        commensalism[task_i][task_j] += 1
                     else:
-                        mutualism[task_i][task_i] += 1
-                if ranking < neutral_pos:
-                    if index >= transfer_pos:
-                        if ranking < help_pos:
-                            continue
-                        elif ranking < neutral_pos:
-                            neutralism[task_i][task_j] += 1
-                        elif ranking < harm_pos:
-                            amensalism[task_i][task_j] += 1
+                        parasitism[task_i][task_j] += 1
+                else:  # 自己 task
+                    mutualism[task_i][task_i] += 1
+
+            # -------------------------------
+            # Neutral 區間
+            # -------------------------------
+            for index in range(help_pos, neutral_pos):
+                task_j = tasks[task_i].actors[index].transfer_from
+
+                if task_j is None:
+                    neutralism[task_i][task_i] += 1
+                    continue
+
+                transfer_pos = actor_size - adapt_transfer_size[task_i][task_j]
+                if index >= transfer_pos:
+                    src_rank = indv_ranking[task_j][index]
+
+                    if src_rank < help_pos:
+                        pass  # 不計
+                    elif src_rank < neutral_pos:
+                        neutralism[task_i][task_j] += 1
                     else:
-                        neutralism[task_i][task_i] += 1
-                if ranking < harm_pos:
-                    if index >= transfer_pos:
-                        if ranking < help_pos:
-                            continue
-                        elif ranking < neutral_pos:
-                            continue
-                        elif ranking < harm_pos:
-                            competition[task_i][task_j] += 1
+                        amensalism[task_i][task_j] += 1
+                else:
+                    neutralism[task_i][task_i] += 1
+
+            # -------------------------------
+            # Harm 區間
+            # -------------------------------
+            for index in range(neutral_pos, harm_pos):
+                task_j = tasks[task_i].actors[index].transfer_from
+
+                if task_j is None:
+                    competition[task_i][task_i] += 1
+                    continue
+
+                transfer_pos = actor_size - adapt_transfer_size[task_i][task_j]
+                if index >= transfer_pos:
+                    src_rank = indv_ranking[task_j][index]
+
+                    if src_rank < help_pos:
+                        pass
+                    elif src_rank < neutral_pos:
+                        pass
                     else:
-                        competition[task_i][task_i] += 1
+                        competition[task_i][task_j] += 1
+                else:
+                    competition[task_i][task_i] += 1
+
 
         # 檢查是否已經都達到 max steps 了
         all_reach_max_steps = True
@@ -365,7 +398,7 @@ if (__name__ == "__main__"):
     print(f"End date: {end_date}")
 
     if (args.save_result):
-        with open(os.path.join(args.output_path, "info.txt"), mode = "w") as file:
+        with open(os.path.join(args.output_path, f"{args.output_path}[{args.seed}][info].txt"), mode = "w") as file:
             file.write(f"Start date: {start_date}\n")
             file.write(f"End date: {end_date}\n")
             file.close()
